@@ -2,20 +2,15 @@ package zdarzenia;
 
 import narzedzia.KomunikatAktywności;
 import sportowcy.Sportowiec;
-import stok.Trasa;
 import stok.Wyciąg;
-
-import java.util.List;
 
 /* Zdarzenie reprezentujące cykliczny przejazd wyciągu. */
 public class KursWyciągu extends Zdarzenie{
     private final Wyciąg wyciąg;
-    private final List<Trasa> listaTras;
 
-    public KursWyciągu(int czas, InterfaceKolejkiZdarzeń kolejkaZdarzeń, Wyciąg wyciąg, List<Trasa> listaTras){
+    public KursWyciągu(int czas, InterfaceKolejkiZdarzeń kolejkaZdarzeń, Wyciąg wyciąg){
         super(czas, kolejkaZdarzeń);
         this.wyciąg = wyciąg;
-        this.listaTras = listaTras;
     }
 
     @Override
@@ -31,8 +26,7 @@ public class KursWyciągu extends Zdarzenie{
             getKolejkaZdarzeń().wstaw(new KursWyciągu(
                     czasNastępnegoKursu,
                     getKolejkaZdarzeń(),
-                    wyciąg,
-                    listaTras
+                    wyciąg
             ));
         }
 
@@ -41,9 +35,10 @@ public class KursWyciągu extends Zdarzenie{
             return;
         }
 
-        Sportowiec[] osobyZKolejki = wyciąg.pobierzOsobyNaWyciąg(getCzas());
+        Sportowiec[] osobyZKolejki = wyciąg.pobierzOsobyNaWyciąg();
 
         for(int i = 0; i < osobyZKolejki.length; i++) {
+            wyciąg.odnotujPrzejazd();
             KomunikatAktywności.odnotuj(
                     getCzas(),
                     osobyZKolejki[i],
@@ -54,7 +49,6 @@ public class KursWyciągu extends Zdarzenie{
                     getCzas() + wyciąg.getCzasPrzejazdu(),
                     osobyZKolejki[i],
                     wyciąg,
-                    listaTras,
                     getKolejkaZdarzeń()
             ));
         }

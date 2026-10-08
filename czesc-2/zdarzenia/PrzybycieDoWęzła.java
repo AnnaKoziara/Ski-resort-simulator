@@ -2,22 +2,30 @@ package zdarzenia;
 
 import sportowcy.Sportowiec;
 import stok.KrawędźGrafu;
+import stok.Trasa;
 import stok.Węzeł;
 
-/* Zdarzenie wywoływane, gdy sportowiec rozpoczyna dzień lub kończy przejazd. */
+import java.util.List;
+
+/**
+ *  Zdarzenie wywoływane, gdy sportowiec rozpoczyna dzień lub kończy przejazd.
+ */
 public class PrzybycieDoWęzła extends Zdarzenie{
     private final Węzeł węzeł;
     private final Sportowiec sportowiec;
+    private final List<Trasa> listaTras;
 
     public PrzybycieDoWęzła(
             int czas,
             Sportowiec sportowiec,
             Węzeł węzeł,
-            InterfaceKolejkiZdarzeń kolejkaZdarzeń) {
+            InterfaceKolejkiZdarzeń kolejkaZdarzeń,
+            List<Trasa> listaTras) {
 
         super(czas, kolejkaZdarzeń);
         this.węzeł = węzeł;
         this.sportowiec = sportowiec;
+        this.listaTras = listaTras;
     }
 
     @Override
@@ -25,7 +33,7 @@ public class PrzybycieDoWęzła extends Zdarzenie{
         if (getCzas() >= KONIEC_CZASU_DECYZJI) {
             return;
         }
-        KrawędźGrafu wybór = sportowiec.wybierzDrogę(węzeł);
-        wybór.przyjmijSportowca(sportowiec, getCzas(), getKolejkaZdarzeń());
+        KrawędźGrafu wybór = sportowiec.wybierzDrogę(węzeł, listaTras);
+        wybór.przyjmijSportowca(sportowiec, getCzas(), listaTras, getKolejkaZdarzeń());
     }
 }

@@ -1,9 +1,7 @@
 package zdarzenia;
 
 /* Abstrakcyjna klasa dla wszystkich zdarzeń symulacji. */
-public abstract class Zdarzenie implements Comparable<Zdarzenie> {
-    /* Zmienna globalna umożliwiająca stwierdzenie, które zdarzenie pojawiło się wcześniej. */
-    private static int licznikZdarzeń = 0;
+public abstract class Zdarzenie {
     /* Czas (15:00:00), w którym sportowcy przestają podejmować decyzje. */
     protected static final int KONIEC_CZASU_DECYZJI = 15 * 3600;
 
@@ -12,12 +10,10 @@ public abstract class Zdarzenie implements Comparable<Zdarzenie> {
 
     private final int czas;
     private final InterfaceKolejkiZdarzeń kolejkaZdarzeń;
-    private final int numerZdarzenia;
 
     public Zdarzenie(int czas, InterfaceKolejkiZdarzeń kolejkaZdarzeń) {
         this.czas = czas;
         this.kolejkaZdarzeń = kolejkaZdarzeń;
-        this.numerZdarzenia = licznikZdarzeń++;
     }
 
     public abstract void wykonaj();
@@ -34,16 +30,8 @@ public abstract class Zdarzenie implements Comparable<Zdarzenie> {
     public int getCzas() {
         return czas;
     }
-    public int getNumerZdarzenia() { return numerZdarzenia; }
+
     protected InterfaceKolejkiZdarzeń getKolejkaZdarzeń() {
         return kolejkaZdarzeń;
-    }
-
-    @Override
-    public int compareTo(Zdarzenie inne) {
-        if(this.czas != inne.getCzas()) {
-            return Integer.compare(this.czas, inne.getCzas());
-        }
-        return Integer.compare(this.numerZdarzenia, inne.getNumerZdarzenia());
     }
 }

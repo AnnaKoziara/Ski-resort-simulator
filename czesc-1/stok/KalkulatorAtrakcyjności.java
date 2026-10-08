@@ -1,8 +1,6 @@
 package stok;
 
-/**
- * Implementacja kalkulatora, który oblicza atrakcyjność tras.
- */
+/* Implementacja kalkulatora, który oblicza atrakcyjność tras. */
 public class KalkulatorAtrakcyjności {
 
     /* Uniemożliwienie tworzenia obiektów tej klasy. */
@@ -29,5 +27,4 @@ public class KalkulatorAtrakcyjności {
         return bazowaAtrakcyjność +
                 (1.0 - bazowaAtrakcyjność) * Math.pow(odporność, ilośćPrzejazdów);
     }
-
 }

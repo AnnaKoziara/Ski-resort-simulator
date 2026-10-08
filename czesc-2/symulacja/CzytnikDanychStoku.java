@@ -1,6 +1,9 @@
 package symulacja;
 
 import sportowcy.Sportowiec;
+import sportowcy.SportowiecKolekcjoner;
+import sportowcy.SportowiecLokalny;
+import sportowcy.SportowiecZachłanny;
 import stok.Trasa;
 import stok.Wyciąg;
 import stok.Węzeł;
@@ -8,17 +11,21 @@ import zdarzenia.InterfaceKolejkiZdarzeń;
 import zdarzenia.KursWyciągu;
 import zdarzenia.PrzybycieDoWęzła;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 
 public class CzytnikDanychStoku {
     private final InterfaceKolejkiZdarzeń kolejkaZdarzeń;
-    private Wyciąg[] tablicaWyciągów;
-    private Trasa[] tablicaTras;
-    private Węzeł[] tablicaWęzłów;
+    private final List<Trasa> listaTras;
+    private List<Wyciąg> listaWyciągów;
+    private List<Węzeł> listaWęzłów;
+    private List<Sportowiec> listaSportowców;
 
     public CzytnikDanychStoku(InterfaceKolejkiZdarzeń kolejkaZdarzeń) {
         this.kolejkaZdarzeń = kolejkaZdarzeń;
+        this.listaTras = new ArrayList<>();
     }
 
     /* Wczytywanie danych symulacji w kolejności: węzły, wyciągi, trasy, sportowcy. */
@@ -37,7 +44,7 @@ public class CzytnikDanychStoku {
 
     private void wczytajWęzły(Scanner skaner) {
         int liczbaWęzłów = Integer.parseInt(skaner.nextLine().trim());
-        Węzeł[] tablicaWęzłów = new Węzeł[liczbaWęzłów];
+        listaWęzłów= new ArrayList<>(liczbaWęzłów);
 
         for (int i = 0; i < liczbaWęzłów; i++) {
             Scanner daneWęzła = new Scanner(skaner.nextLine());
@@ -48,14 +55,13 @@ public class CzytnikDanychStoku {
 
             boolean czySkomunikowany = daneWęzła.hasNext() && daneWęzła.next().equals("s");
 
-            tablicaWęzłów[i] = new Węzeł(wysokość, x, y, czySkomunikowany);
+            listaWęzłów.add(new Węzeł(wysokość, x, y, czySkomunikowany));
         }
-        this.tablicaWęzłów = tablicaWęzłów;
     }
 
     private void wczytajWyciągi(Scanner skaner, int aktualnyCzas) {
         int liczbaWyciągów = Integer.parseInt(skaner.nextLine().trim());
-        Wyciąg[] tablicaWyciągów = new Wyciąg[liczbaWyciągów];
+        this.listaWyciągów = new ArrayList<>(liczbaWyciągów);
 
         for (int i = 0; i < liczbaWyciągów; i++) {
             Scanner daneWyciągu = new Scanner(skaner.nextLine());
@@ -66,33 +72,34 @@ public class CzytnikDanychStoku {
             int maksymalnaGrupa = daneWyciągu.nextInt();
             int czasPrzejazdu = daneWyciągu.nextInt();
 
-            Węzeł stacjaPoczątkowa = tablicaWęzłów[idPoczątkowego];
-            Węzeł stacjaKońcowa = tablicaWęzłów[idKońcowego];
+            Węzeł stacjaPoczątkowa = listaWęzłów.get(idPoczątkowego);
+            Węzeł stacjaKońcowa = listaWęzłów.get(idKońcowego);
 
-            tablicaWyciągów[i] = new Wyciąg(
+            Wyciąg nowyWyciąg = new Wyciąg(
                     i,
                     stacjaPoczątkowa,
                     stacjaKońcowa,
                     odstępCzasowy,
                     maksymalnaGrupa,
-                    czasPrzejazdu
+                    czasPrzejazdu,
+                    aktualnyCzas
             );
 
-            stacjaPoczątkowa.dodajWyciąg(tablicaWyciągów[i]);
+            listaWyciągów.add(nowyWyciąg);
+            stacjaPoczątkowa.dodajWyciąg(nowyWyciąg);
 
             /* Rozpoczęcie działania wyciągu. */
             kolejkaZdarzeń.wstaw(new KursWyciągu(
                     aktualnyCzas,
                     kolejkaZdarzeń,
-                    tablicaWyciągów[i]
+                    nowyWyciąg,
+                    listaTras
             ));
         }
-        this.tablicaWyciągów = tablicaWyciągów;
     }
 
     private void wczytajTrasy(Scanner skaner) {
         int liczbaTras = Integer.parseInt(skaner.nextLine().trim());
-        Trasa[] tablicaTras = new Trasa[liczbaTras];
 
         for (int i = 0; i < liczbaTras; i++) {
             Scanner daneTrasy = new Scanner(skaner.nextLine());
@@ -105,10 +112,10 @@ public class CzytnikDanychStoku {
             double bazowaAtrakcyjność = daneTrasy.nextDouble();
             double odporność = daneTrasy.nextDouble();
 
-            Węzeł stacjaPoczątkowa = tablicaWęzłów[idPoczątkowego];
-            Węzeł stacjaKońcowa = tablicaWęzłów[idKońcowego];
+            Węzeł stacjaPoczątkowa = listaWęzłów.get(idPoczątkowego);
+            Węzeł stacjaKońcowa = listaWęzłów.get(idKońcowego);
 
-            tablicaTras[i] = new Trasa(
+            Trasa nowaTrasa = new Trasa(
                     i,
                     stacjaPoczątkowa,
                     stacjaKońcowa,
@@ -118,14 +125,16 @@ public class CzytnikDanychStoku {
                     odporność
             );
 
-            stacjaPoczątkowa.dodajTrasę(tablicaTras[i]);
+            stacjaPoczątkowa.dodajTrasę(nowaTrasa);
+            this.listaTras.add(nowaTrasa);
         }
-        this.tablicaTras = tablicaTras;
+
     }
 
     /* Wczytywanie grupy sportowców i dodanie do kolejki zdarzeń ich pojawienia
     się na stoku, czyli dodanie zdarzenia PrzybycieDoWęzła. */
     private void wczytajSportowców(Scanner skaner) {
+        this.listaSportowców = new ArrayList<>();
         int liczbaGrup = Integer.parseInt(skaner.nextLine().trim());
         int idAktualnegoSportowca = 0;
 
@@ -136,6 +145,8 @@ public class CzytnikDanychStoku {
             int liczbaWGrupie = daneGrupy.nextInt();
             int poziomZaawansowania = daneGrupy.nextInt();
             double spontaniczność = daneGrupy.nextDouble();
+            double współczynnikZnudzenia = daneGrupy.nextDouble();
+            String rodzajSportowca = daneGrupy.next();
             boolean czyŚledzony = daneGrupy.hasNext() && daneGrupy.next().equals("s");
 
             Scanner parametryAtrakcyjności = new Scanner(skaner.nextLine());
@@ -143,6 +154,7 @@ public class CzytnikDanychStoku {
 
             double wagaTrudności = parametryAtrakcyjności.nextDouble();
             double wagaWyrównania = parametryAtrakcyjności.nextDouble();
+            double wagaZnudzenia = parametryAtrakcyjności.nextDouble();
 
             Scanner startoweDane = new Scanner(skaner.nextLine());
 
@@ -154,26 +166,62 @@ public class CzytnikDanychStoku {
                 odstępCzasowy = startoweDane.nextInt();
             }
 
-            Węzeł węzełStartowy = tablicaWęzłów[idWęzłaStartowego];
+            Węzeł węzełStartowy = listaWęzłów.get(idWęzłaStartowego);
             int czas = czasWSekundach(czasStartu);
 
             for (int j = 0; j < liczbaWGrupie; j++) {
                 int czasPrzybycia = czas + (j * odstępCzasowy);
 
-                Sportowiec nowySportowiec = new Sportowiec(
-                        idAktualnegoSportowca,
-                        poziomZaawansowania,
-                        spontaniczność,
-                        wagaTrudności,
-                        wagaWyrównania,
-                        czyŚledzony
-                );
+                Sportowiec nowySportowiec = null;
+
+                switch (rodzajSportowca) {
+                    case "L":
+                        nowySportowiec = new SportowiecLokalny(
+                                idAktualnegoSportowca,
+                                poziomZaawansowania,
+                                spontaniczność,
+                                współczynnikZnudzenia,
+                                wagaTrudności,
+                                wagaWyrównania,
+                                wagaZnudzenia,
+                                czyŚledzony
+                        );
+                        break;
+                    case "Z":
+                        nowySportowiec = new SportowiecZachłanny(
+                                idAktualnegoSportowca,
+                                poziomZaawansowania,
+                                spontaniczność,
+                                współczynnikZnudzenia,
+                                wagaTrudności,
+                                wagaWyrównania,
+                                wagaZnudzenia,
+                                czyŚledzony
+                        );
+                        break;
+                    case "K":
+                        nowySportowiec = new SportowiecKolekcjoner(
+                                idAktualnegoSportowca,
+                                poziomZaawansowania,
+                                spontaniczność,
+                                współczynnikZnudzenia,
+                                wagaTrudności,
+                                wagaWyrównania,
+                                wagaZnudzenia,
+                                czyŚledzony
+                        );
+                        break;
+                }
+
+                listaSportowców.add(nowySportowiec);
 
                 kolejkaZdarzeń.wstaw(new PrzybycieDoWęzła(
                         czasPrzybycia,
                         nowySportowiec,
                         węzełStartowy,
-                        kolejkaZdarzeń
+                        kolejkaZdarzeń,
+                        listaTras
+
                 ));
 
                 idAktualnegoSportowca++;
@@ -192,7 +240,13 @@ public class CzytnikDanychStoku {
         return godziny * 3600 + minuty * 60 + sekundy;
     }
 
-    public Wyciąg[] getTablicaWyciągów() { return tablicaWyciągów; }
+    public List<Wyciąg> getListaWyciągów() { return new ArrayList<>(listaWyciągów); }
 
-    public Trasa[] getTablicaTras() { return tablicaTras; }
+    public List<Trasa> getListaTras() { return new ArrayList<>(listaTras); }
+
+    public List<Węzeł> getListaWęzłów () { return new ArrayList<>(listaWęzłów); }
+
+    public List<Sportowiec> getListaSportowców() {
+        return new ArrayList<>(listaSportowców);
+    }
 }

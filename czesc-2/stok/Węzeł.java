@@ -1,55 +1,69 @@
 package stok;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
-/* Reprezentacja stacji na stoku narciarskim. */
+/**
+ *  Reprezentacja stacji na stoku narciarskim.
+ */
 public class Węzeł {
     private final int wysokość;
     private final int x;
     private final int y;
     private final boolean czySkomunikowany;
-
-    private Wyciąg[] tablicaWyciągów = new Wyciąg[2];
-    private int ileWyciągów = 0;
-
-    private Trasa[] tablicaTras = new Trasa[2];
-    private int ileTras = 0;
+    private final List<Wyciąg> listaWyciągów;
+    private final List<Trasa> listaTras;
 
     public Węzeł(int wysokość, int x, int y, boolean czySkomunikowany)  {
         this.wysokość = wysokość;
         this.x = x;
         this.y = y;
         this.czySkomunikowany = czySkomunikowany;
+        this.listaWyciągów = new ArrayList<>();
+        this.listaTras = new ArrayList<>();
     }
 
     public void dodajWyciąg(Wyciąg nowy) {
-        if (ileWyciągów == tablicaWyciągów.length) {
-            tablicaWyciągów = Arrays.copyOf(tablicaWyciągów, ileWyciągów * 2);
-        }
-        tablicaWyciągów[ileWyciągów] = nowy;
-        ileWyciągów++;
+        listaWyciągów.add(nowy);
     }
 
     public void dodajTrasę(Trasa nowa) {
-        if (ileTras == tablicaTras.length) {
-            tablicaTras = Arrays.copyOf(tablicaTras, ileTras * 2);
-        }
-        tablicaTras[ileTras] = nowa;
-        ileTras++;
-    }
-
-    public int getIleTras() {
-        return ileTras;
-    }
-    public Trasa getTrasa(int indeks) {
-        return tablicaTras[indeks];
+        listaTras.add(nowa);
     }
 
     public int getIleWyciągów() {
-        return ileWyciągów;
+        return listaWyciągów.size();
     }
 
     public Wyciąg getWyciąg(int indeks) {
-        return tablicaWyciągów[indeks];
+        return listaWyciągów.get(indeks);
+    }
+
+    public List<Wyciąg> getListaWyciągów() {
+        return new ArrayList<>(listaWyciągów);
+    }
+
+    public int getIleTras() {
+        return listaTras.size();
+    }
+
+    public Trasa getTrasa(int indeks) {
+        return listaTras.get(indeks);
+    }
+
+    public List<Trasa> getListaTras() {
+        return new ArrayList<>(listaTras);
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public boolean czySkomunikowany() {
+        return czySkomunikowany;
     }
 }
