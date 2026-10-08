@@ -1,0 +1,14 @@
+# Compiled class files
+*.class
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# JUnit standalone runner (test utility)
+junit-platform-console-standalone-*.jar
+
+# OS files
+Thumbs.db
+.DS_Store
