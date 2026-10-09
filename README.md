@@ -30,20 +30,6 @@ The resort is modeled as a **directed graph**:
 
 Rides started before 15:00 may finish after the cutoff. The simulation ends when all events have been processed.
 
-### Slope Attractiveness
-
-Each skier evaluates slopes using a weighted formula:
-
-$$\text{attractiveness} = w_d \cdot \text{skill\_match} + w_s \cdot \text{surface\_attractiveness}$$
-
-where:
-
-$$\text{skill\_match} = 1.0 - \frac{|\text{difficulty} - \text{skill}|}{10}$$
-
-$$\text{surface\_attractiveness} = \text{base} \cdot \text{resilience}^{\text{rides}}$$
-
-The surface degrades with each ride - slopes with low resilience become unattractive quickly.
-
 ### Skier Strategies (Part 2)
 
 All strategies first check the skier's **spontaneity** factor - with that probability, a random edge is chosen. Otherwise:
@@ -270,39 +256,6 @@ java -jar junit-platform-console-standalone.jar --class-path out --scan-classpat
 │
 ├── .gitignore
 └── README.md
-```
-
-## Architecture
-
-```
-┌─────────────┐     reads      ┌──────────────────┐
-│   stdin      │───────────────▶│ CzytnikDanychStoku│
-│  (input)     │                │  (input parser)   │
-└─────────────┘                └────────┬─────────┘
-                                        │ creates
-                    ┌───────────────────┼───────────────────┐
-                    ▼                   ▼                   ▼
-              ┌──────────┐      ┌────────────┐      ┌────────────┐
-              │  Węzły   │      │   Trasy    │      │  Wyciągi   │
-              │ (nodes)  │◀────▶│  (slopes)  │◀────▶│  (lifts)   │
-              └──────────┘      └────────────┘      └────────────┘
-                                        │
-                                        ▼
-                              ┌──────────────────┐
-                              │    Sportowcy     │
-                              │   (skiers)       │
-                              │  ┌─────────────┐ │
-                              │  │ Zachłanny   │ │
-                              │  │ Lokalny     │ │
-                              │  │ Kolekcjoner │ │
-                              │  └─────────────┘ │
-                              └────────┬─────────┘
-                                       │ generates events
-                                       ▼
-                              ┌──────────────────┐     processes
-                              │  KolejkaZdarzeń  │────────────────▶ Symulacja
-                              │  (event queue)   │                  (main loop)
-                              └──────────────────┘
 ```
 
 ## Notes
