@@ -1,24 +1,24 @@
 # Ski Resort Simulator
 
-A **Java** discrete-event simulation of skier traffic at a ski resort. The simulator models lift queues, slope degradation, route-selection strategies, and produces end-of-day statistics. An optional LaTeX map generator visualizes the resort graph and individual skier routes.
+A **Java** discrete-event simulation of skier traffic at a ski resort. The simulator models lift queues, slope degradation, route-selection strategies, and produces end-of-day statistics. A LaTeX map generator visualizes the resort graph and individual skier routes.
 
 The project is split into two independent parts that share the same domain but differ in complexity:
 
 | | Part 1 (`czesc-1`) | Part 2 (`czesc-2`) |
 |---|---|---|
-| **Skier model** | Single type — spontaneous or max-attractiveness | 3 strategy subclasses + boredom mechanics |
+| **Skier model** | Single type - spontaneous or max-attractiveness | 3 strategy subclasses + boredom mechanics |
 | **Event queue** | Array-based (linear insertion) | Priority queue (heap) |
-| **Graph search** | — | BFS/DFS for lookahead strategies |
-| **Map generation** | — | LaTeX/TikZ per-skier route maps |
-| **Tests** | — | JUnit 5 |
+| **Graph search** | - | BFS/DFS for lookahead strategies |
+| **Map generation** | - | LaTeX/TikZ per-skier route maps |
+| **Tests** | - | JUnit 5 |
 
 ## How the Simulation Works
 
 The resort is modeled as a **directed graph**:
 
-- **Nodes** (`Węzeł`) — stations with elevation and (x, y) coordinates where skiers make decisions
-- **Slopes** (`Trasa`) — downhill edges with difficulty, travel time, and degrading surface
-- **Lifts** (`Wyciąg`) — uphill edges with periodic departures, capacity, and FIFO queues
+- **Nodes** (`Węzeł`)  stations with elevation and (x, y) coordinates where skiers make decisions
+- **Slopes** (`Trasa`) - downhill edges with difficulty, travel time, and degrading surface
+- **Lifts** (`Wyciąg`) - uphill edges with periodic departures, capacity, and FIFO queues
 
 ### Simulation Timeline
 
@@ -42,11 +42,11 @@ $$\text{skill\_match} = 1.0 - \frac{|\text{difficulty} - \text{skill}|}{10}$$
 
 $$\text{surface\_attractiveness} = \text{base} \cdot \text{resilience}^{\text{rides}}$$
 
-The surface degrades with each ride — slopes with low resilience become unattractive quickly.
+The surface degrades with each ride - slopes with low resilience become unattractive quickly.
 
 ### Skier Strategies (Part 2)
 
-All strategies first check the skier's **spontaneity** factor — with that probability, a random edge is chosen. Otherwise:
+All strategies first check the skier's **spontaneity** factor - with that probability, a random edge is chosen. Otherwise:
 
 | Strategy | Class | Behavior |
 |---|---|---|
@@ -100,9 +100,9 @@ difficulty_weight surface_weight
 starting_node HH:MM:SS [arrival_interval]
 ```
 
-- `[s]` — enables activity logging for this group
-- `spontaneity` — probability of choosing a random edge (0.0–1.0)
-- `arrival_interval` — seconds between successive skiers in the group (default: 0)
+- `[s]` - enables activity logging for this group
+- `spontaneity` - probability of choosing a random edge (0.0–1.0)
+- `arrival_interval` - seconds between successive skiers in the group (default: 0)
 
 ### Example Input
 
@@ -132,7 +132,7 @@ This defines: 2 nodes (bottom at 1000m, top at 2000m), 1 lift (every 5 min, capa
 For skiers marked with `s`, timestamped messages are printed for each event:
 
 ```
-HH:MM:SS Sportowiec X — [action description]
+HH:MM:SS Sportowiec X - [action description]
 ```
 
 ### End-of-Day Statistics
@@ -150,17 +150,15 @@ HH:MM:SS Sportowiec X — [action description]
 ### LaTeX Maps (Part 2 only)
 
 Part 2 generates `.tex` files with TikZ graphs:
-- **General resort map** — all nodes, slopes, and lifts
-- **Per-skier route maps** — highlighting each skier's traversed edges
+- **General resort map** - all nodes, slopes, and lifts
+- **Per-skier route maps** - highlighting each skier's traversed edges
 
 ## Build & Run
 
 ### Requirements
 
-- **JDK 17+** — uses `Random.nextDouble(origin, bound)` and other modern APIs
-- Source files are **UTF-8** encoded
-
-> ⚠️ Compile each part separately — they share class names across packages.
+- **JDK 17+** - uses `Random.nextDouble(origin, bound)` and other modern APIs
+-Compile each part separately, they share class names across packages.
 
 ### Part 1
 
@@ -193,7 +191,7 @@ javac -encoding UTF-8 -d out $sources
 java -cp out symulacja.Main <output_folder> < data.txt
 ```
 
-Part 2's `Main` requires a **command-line argument** — the directory path where LaTeX map files will be saved.
+Part 2's `Main` requires a **command-line argument**, the directory path where LaTeX map files will be saved.
 
 On Linux/macOS:
 
@@ -218,7 +216,7 @@ java -jar junit-platform-console-standalone.jar --class-path out --scan-classpat
 
 ```
 .
-├── czesc-1/                          Part 1 — basic simulation
+├── czesc-1/                          Part 1 - basic simulation
 │   ├── narzedzia/                      Utilities (random choice, activity messages)
 │   ├── sportowcy/                      Skier model and route selection
 │   │   └── Sportowiec.java
@@ -241,7 +239,7 @@ java -jar junit-platform-console-standalone.jar --class-path out --scan-classpat
 │       ├── KursWyciągu.java              Lift departure
 │       └── PrzybycieDo Węzła.java        Arrival at node
 │
-├── czesc-2/                          Part 2 — strategies + map generation
+├── czesc-2/                          Part 2 - strategies + map generation
 │   ├── kadra/mapki/                    LaTeX map generator
 │   │   ├── GeneratorMapek.java           Map orchestrator
 │   │   ├── graf/                         Graph primitives (points, edges)
@@ -252,9 +250,9 @@ java -jar junit-platform-console-standalone.jar --class-path out --scan-classpat
 │   ├── narzedzia/                      Shared utilities
 │   ├── sportowcy/                      Skier strategies
 │   │   ├── SportowiecZeStrategią.java    Abstract strategy base
-│   │   ├── SportowiecZachłanny.java      Greedy — best local edge
-│   │   ├── SportowiecLokalny.java        Local — lookahead search
-│   │   ├── SportowiecKolekcjoner.java    Collector — visit all slopes
+│   │   ├── SportowiecZachłanny.java      Greedy - best local edge
+│   │   ├── SportowiecLokalny.java        Local - lookahead search
+│   │   ├── SportowiecKolekcjoner.java    Collector - visit all slopes
 │   │   └── ParametryZnudzenia.java       Boredom configuration
 │   ├── stok/                           Extended resort model
 │   │   ├── PrzeszukiwaczGrafu.java       BFS/DFS graph search
@@ -309,7 +307,7 @@ java -jar junit-platform-console-standalone.jar --class-path out --scan-classpat
 
 ## Notes
 
-- Random choices are **not seeded** — results may differ between runs
+- Random choices are **not seeded**, results may differ between runs
 - Input must contain valid numbers and existing node IDs
 - Lift departure intervals must be positive
 - The program does not provide comprehensive input validation
