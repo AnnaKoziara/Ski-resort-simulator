@@ -139,64 +139,12 @@ Part 2 generates `.tex` files with TikZ graphs:
 - **General resort map** - all nodes, slopes, and lifts
 - **Per-skier route maps** - highlighting each skier's traversed edges
 
-## Build & Run
+## Build
 
 ### Requirements
 
 - **JDK 17+** - uses `Random.nextDouble(origin, bound)` and other modern APIs
 -Compile each part separately, they share class names across packages.
-
-### Part 1
-
-```powershell
-Set-Location .\czesc-1
-New-Item -ItemType Directory -Force out | Out-Null
-$sources = Get-ChildItem -Recurse -Filter *.java | ForEach-Object { $_.FullName }
-javac -encoding UTF-8 -d out $sources
-java -cp out symulacja.Main < data.txt
-```
-
-On Linux/macOS:
-
-```sh
-cd czesc-1
-mkdir -p out
-find . -name "*.java" | xargs javac -encoding UTF-8 -d out
-java -cp out symulacja.Main < data.txt
-```
-
-### Part 2
-
-```powershell
-Set-Location .\czesc-2
-New-Item -ItemType Directory -Force out | Out-Null
-$sources = Get-ChildItem -Recurse -Filter *.java |
-    Where-Object { $_.FullName -notmatch '\\testy\\' } |
-    ForEach-Object { $_.FullName }
-javac -encoding UTF-8 -d out $sources
-java -cp out symulacja.Main <output_folder> < data.txt
-```
-
-Part 2's `Main` requires a **command-line argument**, the directory path where LaTeX map files will be saved.
-
-On Linux/macOS:
-
-```sh
-cd czesc-2
-mkdir -p out
-find . -name "*.java" ! -path "*/testy/*" | xargs javac -encoding UTF-8 -d out
-java -cp out symulacja.Main ./maps < data.txt
-```
-
-### Running Tests (Part 2)
-
-Tests use **JUnit 5**. Compile and run with JUnit on the classpath:
-
-```sh
-javac -encoding UTF-8 -cp out:junit-platform-console-standalone.jar -d out \
-    testy/stok/PrzeszukiwaczGrafuTest.java testy/stok/WyciągTest.java
-java -jar junit-platform-console-standalone.jar --class-path out --scan-classpath
-```
 
 ## Project Structure
 
