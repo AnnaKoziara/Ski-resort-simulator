@@ -1,96 +1,96 @@
 # Ski Resort Simulator
 
-The project consists of two independent parts. Each has its own Java sources and may contain classes with the same names, so they must be compiled separately.
+A **Java** discrete-event simulation of skier traffic at a ski resort. The simulator models lift queues, slope degradation, route-selection strategies, and produces end-of-day statistics. An optional LaTeX map generator visualizes the resort graph and individual skier routes.
 
-## Project layout
+The project is split into two independent parts that share the same domain but differ in complexity:
 
-```text
-czesc-1/          Part 1 – skier traffic simulation
-  narzedzia/        Random choice utilities and activity messages
-  sportowcy/        Skier model and route-selection logic
-  stok/             Nodes, slopes, lifts, skier queue, attractiveness calculator
-  symulacja/        Main entry point, simulation class, and input parsing
-  zdarzenia/        Simulation events and the chronological event queue
-czesc-2/          Part 2 – simulation with skier strategies and map generation
-  kadra/mapki/      LaTeX map generation (graph rendering, styling, text)
-  narzedzia/        Shared utilities
-  sportowcy/        Skier models and strategies (collector, local, greedy)
-  stok/             Slopes, lifts, and graph search
-  symulacja/        Main entry point and simulation runner
-  zdarzenia/        Simulation events
-  testy/            Unit tests (JUnit 5)
-```
+| | Part 1 (`czesc-1`) | Part 2 (`czesc-2`) |
+|---|---|---|
+| **Skier model** | Single type — spontaneous or max-attractiveness | 3 strategy subclasses + boredom mechanics |
+| **Event queue** | Array-based (linear insertion) | Priority queue (heap) |
+| **Graph search** | — | BFS/DFS for lookahead strategies |
+| **Map generation** | — | LaTeX/TikZ per-skier route maps |
+| **Tests** | — | JUnit 5 |
 
----
+## How the Simulation Works
 
-## Part 1 – Skier Traffic Simulation
+The resort is modeled as a **directed graph**:
 
-A Java project simulating skier traffic at a ski resort, including slope and lift selection, lift queues, travel times, and changes in slope attractiveness as slopes are used.
+- **Nodes** (`Węzeł`) — stations with elevation and (x, y) coordinates where skiers make decisions
+- **Slopes** (`Trasa`) — downhill edges with difficulty, travel time, and degrading surface
+- **Lifts** (`Wyciąg`) — uphill edges with periodic departures, capacity, and FIFO queues
 
-### How the simulation works
+### Simulation Timeline
 
-The resort is represented as a directed graph:
+| Time | Event |
+|---|---|
+| **09:00** | Simulation starts, first skiers arrive |
+| **15:00** | Skiers stop making new route decisions |
+| **16:00** | Lifts stop operating |
 
-- **Nodes** represent stations and locations where skiers decide where to go next.
-- **Slopes** and **lifts** are edges connecting a starting node to an ending node.
-- Skiers arrive at nodes according to a schedule and choose a slope or a lift.
-- Lifts run periodically. Skiers wait in FIFO queues, and each departure carries up to the lift's capacity.
-- After completing a ride, a skier arrives at the ending node and can choose another edge.
+Rides started before 15:00 may finish after the cutoff. The simulation ends when all events have been processed.
 
-Each skier makes a spontaneous choice with a probability determined by their spontaneity factor. Otherwise, they choose the option with the highest calculated attractiveness. When evaluating a lift, the skier considers the attractiveness of the slopes available at its upper station.
+### Slope Attractiveness
 
-Slope attractiveness takes into account how well its difficulty matches the skier's skill level and the condition of its surface:
+Each skier evaluates slopes using a weighted formula:
 
-```text
-attractiveness =
-    difficulty_weight × skill_match
-  + surface_weight × surface_attractiveness
-```
+$$\text{attractiveness} = w_d \cdot \text{skill\_match} + w_s \cdot \text{surface\_attractiveness}$$
 
-Surface attractiveness is calculated from the slope's base attractiveness, resilience, and the number of rides so far. Random choices are not seeded, so results may differ between runs.
+where:
 
-### Simulation hours
+$$\text{skill\_match} = 1.0 - \frac{|\text{difficulty} - \text{skill}|}{10}$$
 
-- The simulation starts at **09:00:00**.
-- Skiers stop making new decisions at **15:00:00**.
-- Lifts stop operating at **16:00:00**.
+$$\text{surface\_attractiveness} = \text{base} \cdot \text{resilience}^{\text{rides}}$$
 
-Rides that started earlier may finish after 15:00. Skiers arriving at a node at or after 15:00 do not start another ride.
+The surface degrades with each ride — slopes with low resilience become unattractive quickly.
 
-### Input format
+### Skier Strategies (Part 2)
 
-Provide the data in this order: nodes, lifts, slopes, and skier groups. Separate the node, lift, and slope sections with a blank line. Separate fields within a line with spaces. Node IDs are zero-based indices.
+All strategies first check the skier's **spontaneity** factor — with that probability, a random edge is chosen. Otherwise:
 
-#### Nodes
+| Strategy | Class | Behavior |
+|---|---|---|
+| **Greedy** | `SportowiecZachłanny` | Picks the edge with the **highest attractiveness** at the current node |
+| **Local** | `SportowiecLokalny` | Uses graph search to evaluate routes up to a **configurable depth** ahead |
+| **Collector** | `SportowiecKolekcjoner` | Prioritizes **unvisited slopes**; uses graph search to find paths to them. Falls back to greedy when all slopes have been ridden |
+
+Each strategy has **boredom mechanics** (`ParametryZnudzenia`): after visiting the same edge too many times, the skier may switch to random selection.
+
+## Input Format
+
+Input is read from **stdin**. Sections are separated by blank lines, in this order:
+
+### 1. Nodes
 
 ```text
 number_of_nodes
 elevation x y [s]
+...
 ```
 
-- `elevation`, `x`, and `y` are integers.
-- The optional `s` marks a node as connected. This value is currently stored but does not affect route selection.
+The optional `s` marks a node as connected (stored but does not affect routing).
 
-#### Lifts
+### 2. Lifts
 
 ```text
 number_of_lifts
 start_node end_node departure_interval max_group_size travel_time
+...
 ```
 
-All parameters other than node IDs are integers. Departure intervals and travel times are measured in seconds.
+Times are in seconds. Node IDs are zero-based.
 
-#### Slopes
+### 3. Slopes
 
 ```text
 number_of_slopes
 start_node end_node difficulty travel_time base_attractiveness resilience
+...
 ```
 
-- `difficulty` and `travel_time` are integers; travel time is measured in seconds.
-- `base_attractiveness` and `resilience` are decimal numbers written with a period.
+`base_attractiveness` and `resilience` are decimal numbers (e.g. `0.8`, `0.95`).
 
-#### Skier groups
+### 4. Skier Groups
 
 Each group is described by three lines:
 
@@ -100,12 +100,11 @@ difficulty_weight surface_weight
 starting_node HH:MM:SS [arrival_interval]
 ```
 
-- The optional `s` enables activity messages for skiers in the group.
-- `spontaneity` is the probability of choosing an edge at random.
-- The weights determine the influence of skill matching and surface attractiveness.
-- `arrival_interval` is optional and measured in seconds. It specifies the delay between successive skiers in the group; the default is `0`.
+- `[s]` — enables activity logging for this group
+- `spontaneity` — probability of choosing a random edge (0.0–1.0)
+- `arrival_interval` — seconds between successive skiers in the group (default: 0)
 
-#### Example input
+### Example Input
 
 ```text
 2
@@ -124,13 +123,46 @@ starting_node HH:MM:SS [arrival_interval]
 0 09:00:00 60
 ```
 
-### Output
+This defines: 2 nodes (bottom at 1000m, top at 2000m), 1 lift (every 5 min, capacity 4, 10 min ride), 1 slope (difficulty 2, 5 min descent, degrades slowly), and a group of 3 skiers arriving 60s apart.
 
-For skiers marked with `s`, the program prints messages for each event with timestamps in `HH:MM:SS` format. When the simulation finishes, it prints the total number of rides on each slope and lift.
+## Output
 
-### Compile and run (Part 1)
+### Activity Messages
 
-In PowerShell, from the repository root:
+For skiers marked with `s`, timestamped messages are printed for each event:
+
+```
+HH:MM:SS Sportowiec X — [action description]
+```
+
+### End-of-Day Statistics
+
+**Slopes:**
+- Total number of rides
+- Surface condition ("wyrównanie") at end of day
+
+**Lifts:**
+- Maximum queue length
+- Average queue length
+- Total passengers transported
+- Seat occupancy percentage
+
+### LaTeX Maps (Part 2 only)
+
+Part 2 generates `.tex` files with TikZ graphs:
+- **General resort map** — all nodes, slopes, and lifts
+- **Per-skier route maps** — highlighting each skier's traversed edges
+
+## Build & Run
+
+### Requirements
+
+- **JDK 17+** — uses `Random.nextDouble(origin, bound)` and other modern APIs
+- Source files are **UTF-8** encoded
+
+> ⚠️ Compile each part separately — they share class names across packages.
+
+### Part 1
 
 ```powershell
 Set-Location .\czesc-1
@@ -140,15 +172,16 @@ javac -encoding UTF-8 -d out $sources
 java -cp out symulacja.Main < data.txt
 ```
 
-The program reads input from standard input. The command above supplies it from `data.txt`.
+On Linux/macOS:
 
----
+```sh
+cd czesc-1
+mkdir -p out
+find . -name "*.java" | xargs javac -encoding UTF-8 -d out
+java -cp out symulacja.Main < data.txt
+```
 
-## Part 2 – Simulation with Skier Strategies and Map Generation
-
-The second part extends the resort simulation with multiple skier strategies (collector, local, greedy), slope graph search, and LaTeX map generation. Unit tests are located in `czesc-2/testy/`.
-
-### Compile (Part 2)
+### Part 2
 
 ```powershell
 Set-Location .\czesc-2
@@ -157,16 +190,131 @@ $sources = Get-ChildItem -Recurse -Filter *.java |
     Where-Object { $_.FullName -notmatch '\\testy\\' } |
     ForEach-Object { $_.FullName }
 javac -encoding UTF-8 -d out $sources
+java -cp out symulacja.Main <output_folder> < data.txt
 ```
 
----
+Part 2's `Main` requires a **command-line argument** — the directory path where LaTeX map files will be saved.
 
-## Requirements
+On Linux/macOS:
 
-- **JDK 17 or later** — the project uses, among other features, `Random.nextDouble(origin, bound)`.
-- Source files are encoded in UTF-8.
+```sh
+cd czesc-2
+mkdir -p out
+find . -name "*.java" ! -path "*/testy/*" | xargs javac -encoding UTF-8 -d out
+java -cp out symulacja.Main ./maps < data.txt
+```
+
+### Running Tests (Part 2)
+
+Tests use **JUnit 5**. Compile and run with JUnit on the classpath:
+
+```sh
+javac -encoding UTF-8 -cp out:junit-platform-console-standalone.jar -d out \
+    testy/stok/PrzeszukiwaczGrafuTest.java testy/stok/WyciągTest.java
+java -jar junit-platform-console-standalone.jar --class-path out --scan-classpath
+```
+
+## Project Structure
+
+```
+.
+├── czesc-1/                          Part 1 — basic simulation
+│   ├── narzedzia/                      Utilities (random choice, activity messages)
+│   ├── sportowcy/                      Skier model and route selection
+│   │   └── Sportowiec.java
+│   ├── stok/                           Resort graph model
+│   │   ├── KalkulatorAtrakcyjności.java  Attractiveness formula
+│   │   ├── KolejkaSportowców.java        FIFO lift queue
+│   │   ├── KrawędźGrafu.java             Abstract graph edge
+│   │   ├── Trasa.java                    Slope (with degradation)
+│   │   ├── Wyciąg.java                   Lift (with statistics)
+│   │   └── Węzeł.java                    Graph node
+│   ├── symulacja/                      Entry point & simulation runner
+│   │   ├── Main.java
+│   │   ├── Symulacja.java
+│   │   └── CzytnikDanychStoku.java       Input parser
+│   └── zdarzenia/                      Event system (array-based queue)
+│       ├── Zdarzenie.java                Abstract event
+│       ├── TablicaZdarzeń.java           Event array
+│       ├── KoniecWjazdu.java             Lift ride end
+│       ├── KoniecZjazdu.java             Slope ride end
+│       ├── KursWyciągu.java              Lift departure
+│       └── PrzybycieDo Węzła.java        Arrival at node
+│
+├── czesc-2/                          Part 2 — strategies + map generation
+│   ├── kadra/mapki/                    LaTeX map generator
+│   │   ├── GeneratorMapek.java           Map orchestrator
+│   │   ├── graf/                         Graph primitives (points, edges)
+│   │   ├── pliki/                        File I/O with safety limits
+│   │   ├── rysowanie/                    TikZ code generation & edge bending
+│   │   ├── styl/                         Visual styles (line, node, contour)
+│   │   └── tekst/                        Character inspection & typesetting
+│   ├── narzedzia/                      Shared utilities
+│   ├── sportowcy/                      Skier strategies
+│   │   ├── SportowiecZeStrategią.java    Abstract strategy base
+│   │   ├── SportowiecZachłanny.java      Greedy — best local edge
+│   │   ├── SportowiecLokalny.java        Local — lookahead search
+│   │   ├── SportowiecKolekcjoner.java    Collector — visit all slopes
+│   │   └── ParametryZnudzenia.java       Boredom configuration
+│   ├── stok/                           Extended resort model
+│   │   ├── PrzeszukiwaczGrafu.java       BFS/DFS graph search
+│   │   └── WynikPrzeszukiwania.java      Search result container
+│   ├── symulacja/                      Entry point & simulation runner
+│   │   ├── Main.java                     Accepts map output path as arg
+│   │   ├── Symulacja.java
+│   │   └── ProjektantStoku.java          Map generation orchestrator
+│   ├── zdarzenia/                      Event system (priority queue)
+│   │   └── KolejkaZdarzeń.java           Heap-based event queue
+│   └── testy/                          JUnit 5 tests
+│       └── stok/
+│           ├── PrzeszukiwaczGrafuTest.java
+│           └── WyciągTest.java
+│
+├── .gitignore
+└── README.md
+```
+
+## Architecture
+
+```
+┌─────────────┐     reads      ┌──────────────────┐
+│   stdin      │───────────────▶│ CzytnikDanychStoku│
+│  (input)     │                │  (input parser)   │
+└─────────────┘                └────────┬─────────┘
+                                        │ creates
+                    ┌───────────────────┼───────────────────┐
+                    ▼                   ▼                   ▼
+              ┌──────────┐      ┌────────────┐      ┌────────────┐
+              │  Węzły   │      │   Trasy    │      │  Wyciągi   │
+              │ (nodes)  │◀────▶│  (slopes)  │◀────▶│  (lifts)   │
+              └──────────┘      └────────────┘      └────────────┘
+                                        │
+                                        ▼
+                              ┌──────────────────┐
+                              │    Sportowcy     │
+                              │   (skiers)       │
+                              │  ┌─────────────┐ │
+                              │  │ Zachłanny   │ │
+                              │  │ Lokalny     │ │
+                              │  │ Kolekcjoner │ │
+                              │  └─────────────┘ │
+                              └────────┬─────────┘
+                                       │ generates events
+                                       ▼
+                              ┌──────────────────┐     processes
+                              │  KolejkaZdarzeń  │────────────────▶ Symulacja
+                              │  (event queue)   │                  (main loop)
+                              └──────────────────┘
+```
 
 ## Notes
 
-- Compile each part separately from its own directory. Do not compile files from `czesc-1/` and `czesc-2/` together, because the parts have overlapping package and class names.
-- Input data should contain valid numbers, IDs of existing nodes, and positive lift departure intervals. The program does not provide comprehensive input validation.
+- Random choices are **not seeded** — results may differ between runs
+- Input must contain valid numbers and existing node IDs
+- Lift departure intervals must be positive
+- The program does not provide comprehensive input validation
+
+## Author
+
+**Anna Koziara**  
+ak479522@students.mimuw.edu.pl
